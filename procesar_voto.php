@@ -1,5 +1,5 @@
 <?php
-require('validar_rut.php')
+require('validar_rut.php');
 // Verifica si se ha enviado el formulario
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     // Obtén los datos del formulario
