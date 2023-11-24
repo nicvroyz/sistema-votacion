@@ -31,7 +31,7 @@ $candidatos = obtenerCandidatos();
 ?>
 <div class="container" max-width="500">
     <h1>Sistema de Votación</h1>
-    <form id="votingForm" action="procesar_voto.php" method="post">
+    <form id="votingForm" onsubmit="return validarFormulario();" action="procesar_voto.php" method="post">
         <!-- Campo para el nombre y apellido -->
         <div class="form-group">
             <label for="nombre_apellido">Nombre y Apellido:</label>
@@ -50,7 +50,7 @@ $candidatos = obtenerCandidatos();
         <!-- Campo para el correo electrónico -->
         <div class="form-group">
             <label for="email">Correo Electrónico:</label>
-            <input type="email" name="email" class="form-control" placeholder="Ingrese su correo" required>
+            <input id="email" type="email" name="email" class="form-control" placeholder="Ingrese su correo" required>
             <div class="error" id="error-email"></div>
 
         </div>
@@ -58,7 +58,7 @@ $candidatos = obtenerCandidatos();
         <!-- Campo para el alias -->
         <div class="form-group">
             <label for="alias">Alias:</label>
-            <input type="text" name="alias" class="form-control" placeholder="Ingrese su Alias" required>
+            <input id="alias" type="text" name="alias" class="form-control" placeholder="Ingrese su Alias" required>
             <div class="error" id="error-alias"></div>
 
         </div>
@@ -137,7 +137,7 @@ $candidatos = obtenerCandidatos();
 </div>
 
 <script src="ajax.php"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 <script src="assets/js/validations.js"></script>
 <script>
     $(document).ready(function () {

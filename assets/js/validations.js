@@ -12,9 +12,16 @@ function asignarValidaciones() {
     });
 
     // Event listener para el campo de "RUT"
+    var timerId; // Variable para almacenar el ID del temporizador
     $('#rut').on('input', function () {
-        validarRUT([]);
-        validarRUTDuplicado();
+        // Limpiar temporizador anterior
+        clearTimeout(timerId);
+        
+        // Configurar un nuevo temporizador
+        timerId = setTimeout(function () {
+            validarRUT();
+            validarRUTDuplicado();
+        }, 500); // Establecer un retraso de 500 milisegundos (ajusta según sea necesario)
     });
 
     // Event listener para el campo de "Email"
@@ -58,14 +65,15 @@ function validarNombreApellido(errores) {
     }
 }
 
-// Función para validar el campo de "Alias"
 function validarAlias(errores) {
     var aliasInput = 'alias';
     var aliasValue = $('#' + aliasInput).val();
 
+    console.log('Valor del Alias:', aliasValue);
+
     if (aliasValue.length < 6 || !/^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d]+$/.test(aliasValue)) {
-        errores.push('El Alias debe tener al menos 6 caracteres y contener letras y números.');
-        mostrarError('error-container', 'El Alias debe tener al menos 6 caracteres y contener letras y números.');
+        errores.push('Alias debe tener al menos 6 caracteres y contener letras y números.');
+        mostrarError('error-container', 'Alias debe tener al menos 6 caracteres y contener letras y números.');
     } else {
         quitarError('error-container');
     }
@@ -95,42 +103,37 @@ function validarRUTDuplicado() {
 }
 
 
-// Función para validar el RUT
 function validarRUT() {
     return new Promise(function (resolve, reject) {
         var rutInput = 'rut';
         var rutValue = $('#' + rutInput).val();
 
+        // Realizar una solicitud AJAX
         $.ajax({
             type: 'POST',
             url: 'validar_rut.php',
             data: { rut: rutValue },
             success: function (response) {
-                var errores = []; // Array para almacenar errores
-
                 if (response === 'true') {
                     // Validar duplicado de RUT después de verificar su formato
-                    validarRUTDuplicado()
+                    validarRUTDuplicado(rutInput, rutValue)
                         .then(function () {
                             quitarError('error-container'); // Limpiar errores anteriores
-                            resolve(true); // Ambas validaciones pasaron
+                            resolve(); // Ambas validaciones pasaron
                         })
                         .catch(function (error) {
-                            errores.push(error); // Agregar error al array
-                            mostrarErrores('error-container', errores);
-                            reject(false); // Error en la validación de duplicado
+                            mostrarError('error-container', error);
+                            reject(error); // Error en la validación de duplicado
                         });
                 } else {
-                    errores.push('El RUT no es válido.'); // Agregar error al array
-                    mostrarErrores('error-container', errores);
-                    reject(false); // El RUT no es válido
+                    mostrarError('error-container', 'El RUT no es válido.');
+                    reject('El RUT no es válido.');
                 }
             },
             error: function (error) {
                 console.log(error);
-                errores.push('Error en la validación del RUT.'); // Agregar error al array
-                mostrarErrores('error-container', errores);
-                reject(false); // Error en la validación del RUT
+                mostrarError('error-container', 'Error en la validación del RUT.');
+                reject('Error en la validación del RUT.');
             }
         });
     });
@@ -184,40 +187,83 @@ function validarCandidato(errores) {
 // Función para validar los checkboxes de "Como se enteró de Nosotros"
 function validarComoSeEntero(errores) {
     var checkboxesComoSeEntero = $('input[name="como_se_entero[]"]');
+    
+    // Contar cuántos checkboxes están marcados
     var checkboxesMarcados = checkboxesComoSeEntero.filter(':checked').length;
 
     if (checkboxesMarcados < 2) {
+        // Agregar error al array
         errores.push('Debe elegir al menos dos opciones en "Como se enteró de Nosotros".');
+        // Mostrar errores después de completar todas las validaciones
         mostrarErrores('error-container', errores);
+        return false;
     } else {
+        // No hay error, quitar mensaje de error
         quitarError('error-container');
+        return true;
     }
 }
 
 // Función para mostrar un mensaje de error
 function mostrarError(contenedor, mensaje) {
     var errorContainer = $('#' + contenedor);
-    errorContainer.empty();
-    errorContainer.append('<p class="alert alert-danger">' + mensaje + '</p>');
+    errorContainer.empty().removeClass('is-valid').addClass('is-invalid');
+    errorContainer.append('<p class="alert alert-danger error-message">' + mensaje + '</p>');
+
     console.log(mensaje);
 }
-
-// Función para mostrar múltiples errores en el contenedor
+// Función para mostrar múltiples errores en el contenedor y aplicar clase de Bootstrap
 function mostrarErrores(contenedor, errores) {
+    // Muestra los mensajes de error en el contenedor de errores
     var errorContainer = $('#' + contenedor);
-    errorContainer.empty();
+
+    // Borra mensajes anteriores y clases de Bootstrap
+    errorContainer.empty().removeClass('is-valid').addClass('is-invalid');
+
+    // Agrega los nuevos mensajes de error
     for (var i = 0; i < errores.length; i++) {
         errorContainer.append('<p class="alert alert-danger">' + errores[i] + '</p>');
     }
+
+    // Loguea los mensajes en la consola para propósitos de depuración
     console.log(errores);
 }
+// Función para quitar el mensaje de error y marcar el campo como válido
+function quitarError(contenedor, inputId) {
+    // Limpia el contenido del contenedor de errores
+    $('#' + contenedor).empty().removeClass('is-invalid').addClass('is-valid');
+    // También elimina cualquier elemento con la clase error-message
+    $('.error-message').remove();
 
-// Función para quitar el mensaje de error
-function quitarError(contenedor) {
-    $('#' + contenedor).empty();
 }
 
-// Función para quitar todos los mensajes de error del contenedor
+// Función para quitar todos los mensajes de error del contenedor y marcar el campo como válido
 function quitarErrores(contenedor) {
-    $('#' + contenedor).empty();
+    // Limpia el contenido del contenedor de errores y aplica clase de Bootstrap
+    var errorContainer = $('#' + contenedor).empty();
+    errorContainer.removeClass('is-invalid').addClass('is-valid');
+}
+
+function validarFormulario() {
+    quitarErrores('error-container');
+    var errores = [];
+
+    // Llama a las funciones de validación y agrega los errores al array
+    validarNombreApellido(errores);
+    validarRUT(errores);
+    validarEmail(errores);
+    validarAlias(errores);
+    validarRegionProvinciaComuna(errores);
+    validarCandidato(errores);
+    validarComoSeEntero(errores);
+
+    // Si hay errores, muéstralos en el contenedor y evita el envío del formulario
+    if (errores.length > 0) {
+        mostrarErrores('error-container', errores);
+        return false;
+    }
+
+    // Si no hay errores, continúa con el envío del formulario (puedes agregar aquí la lógica AJAX si es necesario)
+    console.log('Formulario válido. Enviando...');
+    return true;
 }
