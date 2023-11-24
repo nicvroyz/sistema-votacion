@@ -1,5 +1,6 @@
 <?php
 // validar_rut.php
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $rut = $_POST['rut'];
 
@@ -9,41 +10,60 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     // Devuelve la respuesta al cliente
     echo $esValido ? 'valido' : 'invalido';
 }
-
 function validarRUTChileno($rut) {
-        // Elimina puntos y guiones del RUT
-        $rut = preg_replace('/[^0-9kK]/', '', $rut);
-   
-        // Verifica que el RUT tenga un formato válido
-        if (empty($rut) || !ctype_digit($rut)) {
-            return false;
-        }
-    
-        // Divide el RUT en número y dígito verificador
-        $numero = substr($rut, 0, -1);
-        $dv = strtoupper(substr($rut, -1));
-    
-        // Calcula el dígito verificador esperado
-        $m = 0;
-        $s = 1;
-        for (; $numero; $numero = floor($numero / 10)) {
-            $s = ($s + $numero % 10 * (9 - $m++ % 6)) % 11;
-        }
-        $dv_esperado = chr($s ? $s + 47 : 75);
-    
-        // Compara el dígito verificador esperado con el proporcionado
-        return $dv == $dv_esperado;
-        }
-    
-       // Ejemplo de uso
-       $rut = "12.345.678-9";
-       if (validarRUTChileno($rut)) {
-           echo "El RUT es válido.";
-       } else {
-           echo "El RUT no es válido.";
-       }
-   
-    // Devuelve true si el RUT es válido, false en caso contrario
-    return true;
 
+    // Verifica que no esté vacio y que el string sea de tamaño mayor a 3 carácteres(1-9)        
+    if ((empty($rut)) || strlen($rut) < 3) {
+        return array('error' => true, 'msj' => 'RUT vacío o con menos de 3 caracteres.');
+    }
+
+    // Quitar los últimos 2 valores (el guión y el dígito verificador) y luego verificar que sólo sea
+    // numérico
+    $parteNumerica = str_replace(substr($rut, -2, 2), '', $rut);
+
+    if (!preg_match("/^[0-9]*$/", $parteNumerica)) {
+        return array('error' => true, 'msj' => 'La parte numérica del RUT sólo debe contener números.');
+    }
+
+    $guionYVerificador = substr($rut, -2, 2);
+    // Verifica que el guion y dígito verificador tengan un largo de 2.
+    if (strlen($guionYVerificador) != 2) {
+        return array('error' => true, 'msj' => 'Error en el largo del dígito verificador.');
+    }
+
+    // obliga a que el dígito verificador tenga la forma -[0-9] o -[kK]
+    if (!preg_match('/(^[-]{1}+[0-9kK]).{0}$/', $guionYVerificador)) {
+        return array('error' => true, 'msj' => 'El dígito verificador no cuenta con el patrón requerido');
+    }
+
+    // Valida que sólo sean números, excepto el último dígito que pueda ser k
+    if (!preg_match("/^[0-9.]+[-]?+[0-9kK]{1}/", $rut)) {
+        return array('error' => true, 'msj' => 'Error al digitar el RUT');
+    }
+
+    $rutV = preg_replace('/[\.\-]/i', '', $rut);
+    $dv = substr($rutV, -1);
+    $numero = substr($rutV, 0, strlen($rutV) - 1);
+    $i = 2;
+    $suma = 0;
+    foreach (array_reverse(str_split($numero)) as $v) {
+        if ($i == 8) {
+            $i = 2;
+        }
+        $suma += $v * $i;
+        ++$i;
+    }
+    $dvr = 11 - ($suma % 11);
+    if ($dvr == 11) {
+        $dvr = 0;
+    }
+    if ($dvr == 10) {
+        $dvr = 'K';
+    }
+    if ($dvr == strtoupper($dv)) {
+        return array('error' => false, 'msj' => 'RUT ingresado correctamente.');
+    } else {
+        return array('error' => true, 'msj' => 'El RUT ingresado no es válido.');
+    }
+}
 ?>

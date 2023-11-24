@@ -6,11 +6,14 @@
     <title>Sistema de Votación</title>
     <!-- CSS aquí -->
     <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
 </head>
 <body>
 
 <?php
-// Se incluyen los archivo's de conexión y funciones de la base de datos
+// Se incluyen los archivos de conexión y funciones de la base de datos
 require('db/connection.php');
 require('db/functions.php');
 // Se obtienen las regiones y los candidatos desde la base de datos
@@ -26,71 +29,115 @@ $comunas = obtenerComunasPorProvincia($provincias[0]['id']);
 
 $candidatos = obtenerCandidatos();
 ?>
-
-<!-- Formulario de votación -->
-<div class="container">
+<div class="container" max-width="500">
     <h1>Sistema de Votación</h1>
     <form id="votingForm" action="procesar_voto.php" method="post">
         <!-- Campo para el nombre y apellido -->
-        <label for="nombre_apellido">Nombre y Apellido:</label>
-        <input type="text" name="nombre_apellido" required>
+        <div class="form-group">
+            <label for="nombre_apellido">Nombre y Apellido:</label>
+            <input type="text" name="nombre_apellido" id="nombre_apellido" class="form-control" placeholder="Ingrese su Nombre y Apellido" required>
+            <div class="error" id="error-nombre_apellido"></div>
+        </div>
 
         <!-- Campo para el RUT -->
-        <label for="rut">RUT:</label>
-        <input type="text" name="rut" id="rut" placeholder="Ingrese su RUT (sin puntos ni guiones)" required>
+        <div class="form-group">
+            <label for="rut">RUT:</label>
+            <input type="text" name="rut" id="rut" data-rut-duplicado="false" class="form-control" placeholder="Ingrese su RUT (sin puntos ni guiones)" required>
+            <div class="error" id="error-rut"></div>
+
+        </div>
 
         <!-- Campo para el correo electrónico -->
-        <label for="email">Correo Electrónico:</label>
-        <input type="email" name="email" required>
+        <div class="form-group">
+            <label for="email">Correo Electrónico:</label>
+            <input type="email" name="email" class="form-control" placeholder="Ingrese su correo" required>
+            <div class="error" id="error-email"></div>
+
+        </div>
 
         <!-- Campo para el alias -->
-        <label for="alias">Alias:</label>
-        <input type="text" name="alias" required>
+        <div class="form-group">
+            <label for="alias">Alias:</label>
+            <input type="text" name="alias" class="form-control" placeholder="Ingrese su Alias" required>
+            <div class="error" id="error-alias"></div>
 
-            <!-- Select para la región -->
-        <label for="region">Selecciona una región:</label>
-        <select name="region" id="region" required>
-            <option value="" disabled selected>Selecciona una región</option>
-            <?php foreach ($regiones as $region): ?>
-                <option value="<?php echo $region['id']; ?>"><?php echo $region['region']; ?></option>
-            <?php endforeach; ?>
-        </select>
+        </div>
+
+        <!-- Select para la región -->
+        <div class="form-group">
+            <label for="region">Selecciona una región:</label>
+            <select name="region" id="region" class="form-control" required>
+                <option value="" disabled selected>Selecciona una región</option>
+                <?php foreach ($regiones as $region): ?>
+                    <option value="<?php echo $region['id']; ?>"><?php echo $region['region']; ?></option>
+                <?php endforeach; ?>
+            </select>
+            <div class="error" id="error-region"></div>
+        </div>
 
         <!-- Select para la provincia -->
-        <label for="provincia">Selecciona una provincia:</label>
-        <select name="provincia" id="provincia" required>
-            <option value="" disabled selected>Selecciona una provincia</option>
-        </select>
+        <div class="form-group">
+            <label for="provincia">Selecciona una provincia:</label>
+            <select name="provincia" id="provincia" class="form-control" required>
+                <option value="" disabled selected>Selecciona una provincia</option>
+            </select>
+            <div class="error" id="error-provincia"></div>
+
+        </div>
 
         <!-- Select para la comuna -->
-        <label for="comuna">Selecciona una comuna:</label>
-        <select name="comuna" id="comuna" required>
-            <option value="" disabled selected>Selecciona una comuna</option>
-        </select>
+        <div class="form-group">
+            <label for="comuna">Selecciona una comuna:</label>
+            <select name="comuna" id="comuna" class="form-control" required>
+                <option value="" disabled selected>Selecciona una comuna</option>
+            </select>
+            <div class="error" id="error-comuna"></div>
+
+        </div>
 
         <!-- Select para el candidato -->
-        <label for="candidato">Selecciona un candidato:</label>
-        <select name="candidato" id="candidato" required>
-            <option value="" disabled selected>Selecciona un candidato</option>
-            <?php foreach ($candidatos as $candidato): ?>
-                <option value="<?php echo $candidato['id']; ?>"><?php echo $candidato['nombre']; ?></option>
-            <?php endforeach; ?>
-        </select>
+        <div class="form-group">
+            <label for="candidato">Selecciona un candidato:</label>
+            <select name="candidato" id="candidato" class="form-control" required>
+                <option value="" disabled selected>Selecciona un candidato</option>
+                <?php foreach ($candidatos as $candidato): ?>
+                    <option value="<?php echo $candidato['id']; ?>"><?php echo $candidato['nombre']; ?></option>
+                <?php endforeach; ?>
+            </select>
+            <div class="error" id="error-candidato"></div>
+
+        </div>
 
         <!-- Opciones "Cómo se enteró de nosotros" -->
-        <label>Como se enteró de Nosotros:</label>
-        <input type="checkbox" name="como_se_entero[]" value="Redes Sociales"> Redes Sociales
-        <input type="checkbox" name="como_se_entero[]" value="Prensa"> Prensa
-        <input type="checkbox" name="como_se_entero[]" value="Amigos/Familia"> Amigos/Familia
-        <input type="checkbox" name="como_se_entero[]" value="Otro"> Otro
+        <div class="form-group">
+            <label>Como se enteró de Nosotros:</label>
+            <div class="form-check">
+                <input type="checkbox" name="como_se_entero[]" value="Redes Sociales" class="form-check-input"> Redes Sociales
+            </div>
+            <div class="form-check">
+                <input type="checkbox" name="como_se_entero[]" value="Prensa" class="form-check-input"> Prensa
+            </div>
+            <div class="form-check">
+                <input type="checkbox" name="como_se_entero[]" value="Amigos/Familia" class="form-check-input"> Amigos/Familia
+            </div>
+            <div class="form-check">
+                <input type="checkbox" name="como_se_entero[]" value="Otro" class="form-check-input"> Otro
+            </div>
+            <div class="error" id="error-como_se_entero"></div>
+
+        </div>
 
         <!-- Botón de envío del formulario -->
-        <input type="submit" value="Votar">
+        <input type="submit" value="Votar" class="btn btn-primary">
     </form>
+    <div id="exito" class="exito"></div>
+    <div id="error-container" class="error-container"></div>
+
+
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="ajax.php"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 <script src="assets/js/validations.js"></script>
 <script>
     $(document).ready(function () {
@@ -123,27 +170,42 @@ $candidatos = obtenerCandidatos();
 </script>
 <script>
     $(document).ready(function() {
-        $('#votingForm').submit(function(event) {
-            // Evitar que el formulario se envíe normalmente
-            event.preventDefault();
-
-            // Serializar los datos del formulario
-            var formData = $(this).serialize();
-
-            // Enviar la solicitud AJAX
-            $.ajax({
-                type: 'POST',
-                url: 'procesar_voto.php',
-                data: formData,
-                success: function(response) {
-                    console.log(response);
-                },
-                error: function(error) {
-                    console.log(error);
-                }
-            });
+        asignarValidaciones();
+        $('#votingForm').on('submit', function (event) {
+            // Evitar que se envíe el formulario si hay errores
+            if (!validarFormulario()) {
+                event.preventDefault();
+                // Mostrar mensaje de error general
+                alert('Por favor, corrija los errores antes de enviar el formulario.');
+            } else {
+                // Mostrar mensaje de éxito
+                alert('¡Voto registrado con éxito!');
+                // Puedes resetear el formulario aquí si es necesario
+                $('#votingForm')[0].reset();
+            }
         });
-    });
+
+
+    function mostrarMensaje(response) {
+        // Obtener el contenedor de mensajes de error
+        var errorContainer = $('#error-container');
+
+        // Limpiar mensajes anteriores
+        errorContainer.empty();
+
+        // Mostrar mensaje de éxito o error
+        if (response.includes('¡Voto registrado con éxito!')) {
+            // Mensaje de éxito (verde)
+            errorContainer.html('<p class="alert alert-success">' + response + '</p>');
+
+            // Limpiar el formulario
+            $('#votingForm')[0].reset();
+        } else {
+            // Mensaje de error (rojo)
+            errorContainer.html('<p class="alert alert-danger">' + response + '</p>');
+        }
+    }
+});
 </script>
 
 </body>

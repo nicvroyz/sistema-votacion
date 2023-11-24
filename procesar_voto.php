@@ -1,13 +1,15 @@
 <?php
 require('validar_rut.php');
+require('db/connection.php');
+
 // Verifica si se ha enviado el formulario
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    // Obtén los datos del formulario
-    $candidatoId = $_POST['candidato'];
-    $regionId = $_POST['region'];
-    $provinciaId = $_POST['provincia'];
-    $comunaId = $_POST['comuna'];
-    // Agrega otros campos del formulario según sea necesario
+    $candidatoId = $_POST['candidato'] ?? null;
+    $regionId = $_POST['region'] ?? null;
+    $provinciaId = $_POST['provincia'] ?? null;
+    $comunaId = $_POST['comuna'] ?? null;
+    $nombreApellido = $_POST['nombre_apellido'] ?? null;  // Agregado
+    $rut = $_POST['rut'] ?? null;  // Agregado
 
     // Realiza las validaciones
     $errores = [];
@@ -43,29 +45,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     // Validación de duplicación de votos por RUT
-    $rutDuplicado = verificarRUTDuplicado($rut);
-    if ($rutDuplicado) {
-        $errores[] = "Ya se ha registrado un voto con este RUT.";
+    try {
+        $rutDuplicado = verificarRUTDuplicado($rut);
+        if ($rutDuplicado) {
+            $errores[] = "Ya se ha registrado un voto con este RUT.";
+        }
+    } catch (PDOException $e) {
+        // Manejar errores de la base de datos
+        echo "Error al verificar duplicación de RUT: " . $e->getMessage();
+        throw $e;  // Lanza la excepción nuevamente
     }
 
     // Manejo de errores
     if (!empty($errores)) {
-        foreach ($errores as $error) {
-            echo $error . "<br>";
-        }
+        // Almacena los errores en una variable para mostrar después
+        $mensajeErrores = implode("<br>", $errores);
+        echo $mensajeErrores;  // Puedes ajustar esta parte según tus necesidades
     } else {
-        // Si no hay errores, procesa el voto y guarda en la base de datos
         try {
-            // Conexión a la base de datos
+            // Conexión a la base de datos 
             include('db/connection.php');
 
-            // Asegúrate de que el candidato y la región existan antes de insertar el voto
-            $query = $conn->prepare("INSERT INTO votantes (candidato_id, region_id, provincia_id, comuna_id) VALUES (?, ?, ?, ?)");
-            $query->execute([$candidatoId, $regionId, $provinciaId, $comunaId]);
+            $query = $conn->prepare("INSERT INTO votantes (rut, nombre, candidato_id, region_id, provincia_id, comuna_id) VALUES (?, ?, ?, ?, ?, ?)");
+            $query->execute([$rut, $nombreApellido, $candidatoId, $regionId, $provinciaId, $comunaId]);
 
+            // Si todo va bien, muestra un mensaje de éxito
             echo "¡Voto registrado con éxito!";
         } catch (PDOException $e) {
+            // Si hay un error en la base de datos, muestra un mensaje de error
             echo "Error al procesar el voto: " . $e->getMessage();
+        } finally {
+            // Cerrar la conexión a la base de datos
+            $conn = null;
         }
     }
 }
@@ -74,23 +85,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 // Función para verificar duplicación de votos por RUT
 function verificarRUTDuplicado($rut) {
     // lógica para verificar si ya existe un voto con este RUT
+
     global $conn;
 
-    try {
-        // Preparar la consulta
-        $query = $conn->prepare("SELECT COUNT(*) as count FROM votantes WHERE rut = ?");
-        $query->execute([$rut]);
+    // Preparar la consulta
+    $query = $conn->prepare("SELECT COUNT(*) as count FROM votantes WHERE rut = ?");
+    $query->execute([$rut]);
+    // Obtener el resultado
 
-        // Obtener el resultado
-        $result = $query->fetch(PDO::FETCH_ASSOC);
+    $result = $query->fetch(PDO::FETCH_ASSOC);
+    // Verificar si hay algún registro con el mismo RUT
 
-        // Verificar si hay algún registro con el mismo RUT
-        return ($result['count'] > 0);
-    } catch (PDOException $e) {
-        // Manejar errores de la base de datos
-        echo "Error al verificar duplicación de RUT: " . $e->getMessage();
-        return false;
-    }
-}  return false;
+
+    return ($result['count'] > 0);
+}
 
 ?>
